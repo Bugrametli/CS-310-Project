@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'main_drawer.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -12,18 +13,57 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, '/plan');
-    } else {
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
       showDialog(
         context: context,
-        builder: (context) => const AlertDialog(
+        builder: (_) => const AlertDialog(
           title: Text('Invalid Input'),
           content: Text('Please fill in all fields correctly.'),
         ),
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      Navigator.pushReplacementNamed(context, '/plan');
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No account found for that email.';
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password.';
+          break;
+        case 'invalid-email':
+          message = 'Email address is badly formatted.';
+          break;
+        default:
+          message = 'Authentication failed. Please try again.';
+      }
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Sign-In Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -76,21 +116,21 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: _isLoading ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text(
-                  'Sign In',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Sign In',
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/signup');
-                },
+                onPressed: () => Navigator.pushNamed(context, '/signup'),
                 child: const Text(
                   "Don't have an account? Sign Up",
                   style: TextStyle(color: Colors.black),
