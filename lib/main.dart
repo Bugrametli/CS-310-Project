@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
             backgroundColor: Color(0xFF3083FF),
           ),
         ),
-        home: const AuthGate(),
+        home: const HomeScreen(),
         routes: {
           '/home': (context) => const HomeScreen(),
           '/signin': (context) => const SignInScreen(),
