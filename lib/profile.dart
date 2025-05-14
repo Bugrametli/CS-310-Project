@@ -1,11 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'main_drawer.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    user = FirebaseAuth.instance.currentUser;
+  }
+
+  Future<void> _logOut() async {
+    await FirebaseAuth.instance.signOut();
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+    }
+  }
+
+  Future<void> _editProfile() async {
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController(text: user?.displayName);
+        return AlertDialog(
+          title: const Text('Edit Name'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'Enter your name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newName != null && newName.isNotEmpty) {
+      await user?.updateDisplayName(newName);
+      await user?.reload();
+      setState(() {
+        user = FirebaseAuth.instance.currentUser;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final displayName = user?.displayName ?? 'No Name';
+    final email = user?.email ?? 'No Email';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -19,39 +77,45 @@ class ProfileScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
-            const CircleAvatar(
+            CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/fuelx_logo.png'),
+              backgroundImage: const AssetImage('assets/fuelx_logo.png'),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'John Doe',
+            Text(
+              displayName,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'john.doe@example.com',
+            Text(
+              email,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: _editProfile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Edit Profile',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: _logOut,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Log Out',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
