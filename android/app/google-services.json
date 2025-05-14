@@ -4,6 +4,8 @@
     "project_id": "cs-310-phase3-dbdd0",
     "storage_bucket": "cs-310-phase3-dbdd0.firebasestorage.app"
   },
+
+  
   "client": [
     {
       "client_info": {
@@ -27,3 +29,4 @@
   ],
   "configuration_version": "1"
 }
+

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/meal_provider.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(
@@ -19,54 +19,79 @@ class MainDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Image.asset('assets/fuelx_logo.png', height: 60),
-                const SizedBox(height: 12),
+                const SizedBox(height: 15),
                 const Text(
                   'FuelX Menu',
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ),
-          if (user == null) ...[
-            ListTile(
-              title: const Text('Sign In'),
-              onTap: () => Navigator.pushNamed(context, '/signin'),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () => Navigator.pushNamed(context, '/home'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Profile'),
+                  onTap: () => Navigator.pushNamed(context, '/profile'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.fastfood),
+                  title: const Text('Details'),
+                  onTap: () => Navigator.pushNamed(context, '/detail'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.search),
+                  title: const Text('Search'),
+                  onTap: () => Navigator.pushNamed(context, '/search'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Settings'),
+                  onTap: () => Navigator.pushNamed(context, '/settings'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.restaurant_menu),
+                  title: const Text('Nutrition Plan'),
+                  onTap: () => Navigator.pushNamed(context, '/plan'),
+                ),
+              ],
             ),
-            ListTile(
-              title: const Text('Sign Up'),
-              onTap: () => Navigator.pushNamed(context, '/signup'),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.red),
             ),
-          ] else ...[
-            ListTile(
-              title: const Text('Profile'),
-              onTap: () => Navigator.pushNamed(context, '/profile'),
-            ),
-            ListTile(
-              title: const Text('Details'),
-              onTap: () => Navigator.pushNamed(context, '/detail'),
-            ),
-            ListTile(
-              title: const Text('Search'),
-              onTap: () => Navigator.pushNamed(context, '/search'),
-            ),
-            ListTile(
-              title: const Text('Settings'),
-              onTap: () => Navigator.pushNamed(context, '/settings'),
-            ),
-            ListTile(
-              title: const Text('Nutrition Plan'),
-              onTap: () => Navigator.pushNamed(context, '/plan'),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.of(context).pushNamedAndRemoveUntil('/signin', (route) => false);
-              },
-            ),
-          ],
+            onTap: () async {
+              // Firebase Auth çıkış
+              await FirebaseAuth.instance.signOut();
+
+              // Provider'daki verileri temizle
+              if (context.mounted) {
+                Provider.of<MealProvider>(context, listen: false).resetMeals();
+              }
+
+              // Sayfaları kapat ve SignIn'e yönlendir
+              if (context.mounted) {
+                Navigator.of(context).pop(); // Drawer'ı kapat
+                Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+              }
+            },
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
